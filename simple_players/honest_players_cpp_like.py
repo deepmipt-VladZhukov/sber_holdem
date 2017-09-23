@@ -2,7 +2,10 @@ import pickle
 from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
 import os
+import sys
 dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(dir_path, '../hand_evaluation'))
+from hand_evaluator import win_rate
 
 
 def load_arr():
