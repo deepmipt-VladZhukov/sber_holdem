@@ -1,22 +1,17 @@
 from __future__ import print_function
 
-import argparse
-import os
-import sys
-from a3c.model import ActorCritic
 import torch
-import torch.optim as optim
 import torch.multiprocessing as mp
-import torch.nn as nn
-import torch.nn.functional as F
-from a3c.shared_adam import SharedAdam
-from aggressive_player import AggressivePlayer
-from honest_player import HonestPlayer
 from pypokerengine.api.game import setup_config, start_poker
+
+from a3c.model import ActorCritic
 from a3c.player import A3Cplayer
-from random_player import RandomPlayer
-from caller_player import CallerPlayer
-import numpy as np
+from a3c.shared_adam import SharedAdam
+from simple_players.aggressive_player import AggressivePlayer
+from simple_players.caller_player import CallerPlayer
+from simple_players.honest_player import HonestPlayer
+from simple_players.random_player import RandomPlayer
+
 torch.manual_seed(123)
 
 def train(rank, shared_model, optimizer):

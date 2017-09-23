@@ -1,19 +1,20 @@
 from pypokerengine.api.game import setup_config, start_poker
-from random_player import RandomPlayer
-from bot18.honest_player import HonestPlayer as sub18player
-from bot20.honest_player import HonestPlayer as sub20player
+
 # from subs.bot30.honest_player import HonestPlayer as sub30player
-from honest_player import HonestPlayer
-from aggressive_player import AggressivePlayer
+from simple_players.honest_player import HonestPlayer
+from simple_players.random_player import RandomPlayer
+from simple_players.aggressive_player import AggressivePlayer
+from simple_players.caller_player import CallerPlayer
 
 config = setup_config(max_round=50, initial_stack=1500, small_blind_amount=15)
 config.register_player(name="p1", algorithm=HonestPlayer())
-config.register_player(name="p2", algorithm=sub20player())
-config.register_player(name="p3", algorithm=sub20player())
-config.register_player(name="p4", algorithm=sub20player())
-config.register_player(name="p5", algorithm=sub20player())
-config.register_player(name="p6", algorithm=RandomPlayer())
+config.register_player(name="p2", algorithm=HonestPlayer())
+config.register_player(name="p3", algorithm=AggressivePlayer())
+config.register_player(name="p4", algorithm=AggressivePlayer())
+config.register_player(name="p5", algorithm=CallerPlayer())
+config.register_player(name="p6", algorithm=CallerPlayer())
 config.register_player(name="p7", algorithm=RandomPlayer())
+config.register_player(name="p8", algorithm=RandomPlayer())
 # config.register_player(name="p7", algorithm=RandomPlayer())
 # config.register_player(name="p8", algorithm=RandomPlayer())
 # config.register_player(name="p9", algorithm=RandomPlayer())

@@ -1,8 +1,9 @@
-import sys
 import json
+import sys
 
 # from pypokerengine.players import BasePokerPlayer
-from honest_player import HonestPlayer
+from simple_players.honest_player import HonestPlayer
+
 # from pg_player import PgPlayer
 # from aggressive_player import AggressivePlayer
 

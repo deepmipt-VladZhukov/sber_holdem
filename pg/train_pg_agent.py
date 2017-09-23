@@ -1,19 +1,19 @@
-from pypokerengine.players import BasePokerPlayer
-from pypokerengine.engine.card import Card
-from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
-from pypokerengine.api.game import setup_config, start_poker
-from old_player import OldPlayer
-from caller_player import CallerPlayer
-from honest_player import HonestPlayer
-from aggressive_player import AggressivePlayer
-from random_player import RandomPlayer
+import numpy as np
 import torch
+import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torch.autograd as autograd
+from pypokerengine.api.game import setup_config, start_poker
+from pypokerengine.engine.card import Card
+from pypokerengine.players import BasePokerPlayer
+from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
 from torch.autograd import Variable
-import numpy as np
+
+from simple_players.aggressive_player import AggressivePlayer
+from simple_players.caller_player import CallerPlayer
+from simple_players.honest_player import HonestPlayer
+from simple_players.random_player import RandomPlayer
 
 gamma = 0.95
 NB_SIMULATION = 500
@@ -59,7 +59,7 @@ class Policy(nn.Module):
 
 policy = Policy()
 optimizer = optim.Adam(policy.parameters(), lr=1e-3)
-policy.load_state_dict(torch.load('state/bot3.pth'))
+# policy.load_state_dict(torch.load('state/bot3.pth'))
 
 def select_action(state, desk):
     state = torch.from_numpy(state).float().unsqueeze(0)

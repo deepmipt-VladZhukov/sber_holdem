@@ -1,8 +1,9 @@
-from pypokerengine.players import BasePokerPlayer
 from pypokerengine.api.emulator import Emulator
+from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards
 from pypokerengine.utils.game_state_utils import restore_game_state, attach_hole_card, attach_hole_card_from_deck
-from honest_player import HonestPlayer
+
+from simple_players.honest_player import HonestPlayer
 
 NB_SIMULATION = 2
 
