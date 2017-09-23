@@ -2,6 +2,7 @@
 import sys
 import hyperopt.mongoexp
 import logging
+from optimize import objective_fn
 
 
 logging.basicConfig(
