@@ -14,10 +14,12 @@ from simple_players.aggressive_player import AggressivePlayer
 from simple_players.caller_player import CallerPlayer
 from simple_players.honest_player import HonestPlayer
 from simple_players.random_player import RandomPlayer
+from pg.pg_player import PgPlayer as current_PgPlayer
 
 gamma = 0.95
-NB_SIMULATION = 500
+NB_SIMULATION = 1000
 PRINT = True
+
 
 class HandyCard(Card):
 
@@ -40,7 +42,6 @@ class Policy(nn.Module):
         self.affine3 = nn.Linear(56, 4)
         self.conv1 = nn.Conv1d(4, 4, 8, stride=1)
         self.conv2 = nn.Conv1d(4, 8, 4, stride=1)
-        # self.conv3 = nn.Conv1d(8, 16, 4, stride=1)
 
         self.saved_actions = []
         self.rewards = []
@@ -125,12 +126,21 @@ class PgPlayer(BasePokerPlayer):
                 current_players += 1
         if current_players < 2:
             current_players = 2
-        win_rate = estimate_hole_card_win_rate(
-            nb_simulation=NB_SIMULATION,
-            nb_player=current_players,
-            hole_card=gen_cards(hole_card),
-            community_card=gen_cards(community_card)
-        )
+
+        if  round_state['street'] == 'preflop':
+            win_rate = estimate_hole_card_win_rate(
+                nb_simulation=500,
+                nb_player=current_players,
+                hole_card=gen_cards(hole_card),
+                community_card=gen_cards(community_card)
+            )
+        else :
+            win_rate = estimate_hole_card_win_rate(
+                nb_simulation=NB_SIMULATION,
+                nb_player=current_players,
+                hole_card=gen_cards(hole_card),
+                community_card=gen_cards(community_card)
+            )
 
         bank = round_state['pot']['main']['amount']
         self.big_blind_amount = 2*round_state['small_blind_amount']
@@ -159,15 +169,42 @@ class PgPlayer(BasePokerPlayer):
                 print("{} call {}".format(round_state['street'], valid_actions[1]['amount']))
             return valid_actions[1]['action'], valid_actions[1]['amount']
         elif self.MIN_RAISE == action:
+
+            if valid_actions[2]['amount']['min'] == -1:
+                if PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+                return valid_actions[1]['action'], valid_actions[1]['amount']
+
             if PRINT:
                 print("{} raise {}".format(round_state['street'], valid_actions[2]['amount']['min']))
+
             return valid_actions[2]['action'], valid_actions[2]['amount']['min']
-        elif self.MAX_RAISE == action:
+        elif self.MAX_RAISE == action and win_rate > 0.85 and (round_state['street'] == 'turn' or round_state['street'] == 'river'):
+
+            if valid_actions[2]['amount']['max'] == -1:
+                if PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+                return valid_actions[1]['action'], valid_actions[1]['amount']
+
             if PRINT:
                 print("{} allin {}".format(round_state['street'], valid_actions[2]['amount']['max']))
+
             return valid_actions[2]['action'], valid_actions[2]['amount']['max']
+        elif action == self.MAX_RAISE:
+
+            if valid_actions[2]['amount']['min'] == -1:
+                if PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+                return valid_actions[1]['action'], valid_actions[1]['amount']
+
+            if PRINT:
+                print("{} 2 min raise {}".format(round_state['street'], 2*valid_actions[2]['amount']['min']))
+
+            return valid_actions[2]['action'], 2 * valid_actions[2]['amount']['min']
         else:
-            raise Exception("Invalid action [ %s ] is set" % action)
+            if PRINT:
+                print("{} fold".format(round_state['street']))
+            return valid_actions[0]['action'], valid_actions[0]['amount']
 
     def receive_game_start_message(self, game_info):
         self.nb_player = game_info['player_num']
@@ -180,9 +217,14 @@ class PgPlayer(BasePokerPlayer):
 
 
     def receive_round_start_message(self, round_count, hole_card, seats):
+        # if self.global_stack > 0:
+        #     print("_"*50)
+        #     print(hole_card)
         pass
 
     def receive_street_start_message(self, street, round_state):
+        # if len(round_state['community_card']) > 0 and self.global_stack > 0:
+        #     print(round_state['community_card'])
         pass
 
     def receive_game_update_message(self, action, round_state):
@@ -209,16 +251,12 @@ config = setup_config(max_round=50, initial_stack=1500, small_blind_amount=15)
 config.register_player(name="p1", algorithm=my_player)
 config.register_player(name="p2", algorithm=HonestPlayer())
 config.register_player(name="p3", algorithm=HonestPlayer())
-config.register_player(name="p4", algorithm=AggressivePlayer())
-config.register_player(name="p5", algorithm=AggressivePlayer())
+config.register_player(name="p4", algorithm=current_PgPlayer())
+config.register_player(name="p5", algorithm=current_PgPlayer())
 # config.register_player(name="p5", algorithm=RandomPlayer())
 # config.register_player(name="p6", algorithm=RandomPlayer())
-config.register_player(name="p7", algorithm=CallerPlayer())
-config.register_player(name="p8", algorithm=CallerPlayer())
-# config.register_player(name="p6", algorithm=sub18player())
-# config.register_player(name="p7", algorithm=sub20player())
-# config.register_player(name="p8", algorithm=sub18player())
-# config.register_player(name="p9", algorithm=sub18player())
+# config.register_player(name="p7", algorithm=CallerPlayer())
+# config.register_player(name="p8", algorithm=CallerPlayer())
 
 
 for i_episode in range(1000000):

@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
 
-NB_SIMULATION = 500
+NB_SIMULATION = 1000
 
 class HandyCard(Card):
 
@@ -31,7 +31,6 @@ class Policy(nn.Module):
         self.affine3 = nn.Linear(56, 4)
         self.conv1 = nn.Conv1d(4, 4, 8, stride=1)
         self.conv2 = nn.Conv1d(4, 8, 4, stride=1)
-        # self.conv3 = nn.Conv1d(8, 16, 4, stride=1)
 
         self.saved_actions = []
         self.rewards = []
@@ -42,7 +41,6 @@ class Policy(nn.Module):
 
         desk_out = F.elu(self.conv1(desk))
         desk_out = F.elu(self.conv2(desk_out))
-        # desk_out = F.elu(self.conv3(desk_out))
         desk_out = desk_out.view(-1, 24)
         out = F.softmax(F.elu(self.affine3(torch.cat([state_out, desk_out],1))))
         return out
@@ -56,11 +54,10 @@ class PgPlayer(BasePokerPlayer):
         self.MIN_RAISE = 2
         self.MAX_RAISE = 3
         self.PRINT = True
+        self.TRAINING = True
         self.start_stack = 0
-
-    def __init__(self):
         self.policy = Policy()
-        self.policy.load_state_dict(torch.load('bot3.pth'))
+        self.policy.load_state_dict(torch.load('pg/state/bot3.pth'))
 
     def select_action(self, state, desk):
         state = torch.from_numpy(state).float().unsqueeze(0)
@@ -89,12 +86,20 @@ class PgPlayer(BasePokerPlayer):
         for i in range(len(hole_card)):
             card = HandyCard.from_str(hole_card[i])
             m[card.suit][card.rank-2] = 1
-        win_rate = estimate_hole_card_win_rate(
-            nb_simulation=NB_SIMULATION,
-            nb_player=current_players,
-            hole_card=gen_cards(hole_card),
-            community_card=gen_cards(community_card)
-        )
+        if  round_state['street'] == 'preflop':
+            win_rate = estimate_hole_card_win_rate(
+                nb_simulation=500,
+                nb_player=current_players,
+                hole_card=gen_cards(hole_card),
+                community_card=gen_cards(community_card)
+            )
+        else :
+            win_rate = estimate_hole_card_win_rate(
+                nb_simulation=NB_SIMULATION,
+                nb_player=current_players,
+                hole_card=gen_cards(hole_card),
+                community_card=gen_cards(community_card)
+            )
 
         bank = round_state['pot']['main']['amount']
         big_blind_amount = 2*round_state['small_blind_amount']
@@ -109,22 +114,49 @@ class PgPlayer(BasePokerPlayer):
 
         if self.FOLD == action:
             if self.PRINT:
-                print("{} fold".format(round_state['street']), self.actions_in_game)
+                print("{} fold".format(round_state['street']))
             return valid_actions[0]['action'], valid_actions[0]['amount']
         elif self.CALL == action:
             if self.PRINT:
                 print("{} call {}".format(round_state['street'], valid_actions[1]['amount']))
             return valid_actions[1]['action'], valid_actions[1]['amount']
         elif self.MIN_RAISE == action:
+
+            if valid_actions[2]['amount']['min'] == -1:
+                if self.PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+                return valid_actions[1]['action'], valid_actions[1]['amount']
+
             if self.PRINT:
                 print("{} raise {}".format(round_state['street'], valid_actions[2]['amount']['min']))
+
             return valid_actions[2]['action'], valid_actions[2]['amount']['min']
-        elif self.MAX_RAISE == action:
+        elif self.MAX_RAISE == action and win_rate > 0.85 and (round_state['street'] == 'turn' or round_state['street'] == 'river'):
+
+            if valid_actions[2]['amount']['max'] == -1:
+                if self.PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+                return valid_actions[1]['action'], valid_actions[1]['amount']
+
             if self.PRINT:
                 print("{} allin {}".format(round_state['street'], valid_actions[2]['amount']['max']))
+
             return valid_actions[2]['action'], valid_actions[2]['amount']['max']
+        elif action == self.MAX_RAISE:
+
+            if valid_actions[2]['amount']['min'] == -1:
+                if self.PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+                return valid_actions[1]['action'], valid_actions[1]['amount']
+
+            if self.PRINT:
+                print("{} 2 min raise {}".format(round_state['street'], 2*valid_actions[2]['amount']['min']))
+
+            return valid_actions[2]['action'], 2 * valid_actions[2]['amount']['min']
         else:
-            raise Exception("Invalid action [ %s ] is set" % action)
+            if self.PRINT:
+                print("{} fold".format(round_state['street']))
+            return valid_actions[0]['action'], valid_actions[0]['amount']
 
     def receive_game_start_message(self, game_info):
         self.nb_player = game_info['player_num']
@@ -133,6 +165,9 @@ class PgPlayer(BasePokerPlayer):
             if self.uuid == i['uuid']:
                 stack = i['stack']
         self.start_stack = stack
+        if self.TRAINING==True:
+            print("updating policy")
+            self.policy.load_state_dict(torch.load('pg/state/bot3.pth'))
 
     def receive_round_start_message(self, round_count, hole_card, seats):
         pass
