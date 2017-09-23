@@ -2,14 +2,14 @@ import json
 import sys
 
 # from pypokerengine.players import BasePokerPlayer
-from simple_players.honest_player import HonestPlayer
+from simple_players.fast_player import FastPlayer
 
 # from pg_player import PgPlayer
 # from aggressive_player import AggressivePlayer
 
 if __name__ == '__main__':
 
-    player = HonestPlayer()
+    player = FastPlayer()
 
     while True:
         line = sys.stdin.readline().rstrip()

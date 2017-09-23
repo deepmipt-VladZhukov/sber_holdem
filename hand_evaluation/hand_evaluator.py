@@ -1,6 +1,6 @@
-from card import DECK, DECK_INV, cards2ints
+from hand_evaluation.card import DECK, DECK_INV, cards2ints
 from random import randint
-from combinations import combinationF7
+from hand_evaluation.combinations import combinationF7
 from itertools import chain
 
 
