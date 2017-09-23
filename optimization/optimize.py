@@ -31,6 +31,7 @@ def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
 
 
 def objective_fn(params):
+    print (params)
     r = eval_player(my_bot=HonestPlayer2(1000, params[0], params[1], params[2]))
     return r
 
@@ -38,5 +39,5 @@ def objective_fn(params):
 if __name__ == '__main__':
     space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr1', 0.5, 1.), hp.uniform('thr1', 0.5, 1.)]
     func_to_min = partial(objective_fn)
-    best = fmin(func_to_min, space, algo=tpe.suggest, max_evals=100
+    best = fmin(func_to_min, space, algo=tpe.suggest, max_evals=100)
     print(best)
