@@ -2,7 +2,6 @@ import os
 import sys
 from pypokerengine.api.game import setup_config, start_poker
 dir_path = os.path.dirname(os.path.abspath(__file__))
-print (dir_path)
 sys.path.append(os.path.join(dir_path, '../simple_players'))
 from honest_players_cpp_like import HonestPlayer, HonestPlayer2
 
