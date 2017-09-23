@@ -4,6 +4,8 @@ from pypokerengine.api.game import setup_config, start_poker
 dir_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(dir_path, '../simple_players'))
 from honest_players_cpp_like import HonestPlayer, HonestPlayer2
+from hyperopt import hp, fmin, tpe
+from functools import partial
 
 
 def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
@@ -25,9 +27,16 @@ def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
             result_dict.setdefault(k['name'], 0)
             result_dict[k['name']] += k['stack'] / num_evals
 
-    return result_dict
+    return -1*result_dict['my_bot']
+
+
+def objective_fn(params):
+    r = eval_player(my_bot=HonestPlayer2(1000, params[0], params[1], params[2]))
+    return r
 
 
 if __name__ == '__main__':
-    r = eval_player(1)
-    print(r)
+    space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr1', 0.5, 1.), hp.uniform('thr1', 0.5, 1.)]
+    func_to_min = partial(objective_fn)
+    best = fmin(func_to_min, space, algo=tpe.suggest, max_evals=100
+    print(best)
