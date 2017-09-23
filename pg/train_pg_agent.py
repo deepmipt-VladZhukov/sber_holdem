@@ -58,8 +58,8 @@ class Policy(nn.Module):
 
 
 policy = Policy()
-optimizer = optim.Adam(policy.parameters(), lr=1e-3)
-# policy.load_state_dict(torch.load('state/bot3.pth'))
+optimizer = optim.Adam(policy.parameters(), lr=1e-4)
+policy.load_state_dict(torch.load('pg/state/bot3.pth'))
 
 def select_action(state, desk):
     state = torch.from_numpy(state).float().unsqueeze(0)
@@ -193,13 +193,12 @@ class PgPlayer(BasePokerPlayer):
         for i in round_state['seats']:
             if self.uuid == i['uuid']:
                 stack = i['stack']
-        if len(policy.rewards) > 0: #and stack != 0:
+        if len(policy.rewards) > 0:
             if stack == 0:
                 policy.rewards[-1] = (3*(stack - self.global_stack))/self.big_blind_amount
             else:
                 policy.rewards[-1] = (stack - self.global_stack)/self.big_blind_amount
-        # elif len(policy.rewards) > 0 and stack == 0:
-        #     policy.rewards[-1] = (-5 * self.global_stack) / self.big_blind_amount
+
         self.global_stack = stack
         finish_episode()
 
@@ -209,11 +208,11 @@ my_player = PgPlayer()
 config = setup_config(max_round=50, initial_stack=1500, small_blind_amount=15)
 config.register_player(name="p1", algorithm=my_player)
 config.register_player(name="p2", algorithm=HonestPlayer())
-# config.register_player(name="p3", algorithm=HonestPlayer())
+config.register_player(name="p3", algorithm=HonestPlayer())
 config.register_player(name="p4", algorithm=AggressivePlayer())
-# config.register_player(name="p4", algorithm=AggressivePlayer())
-config.register_player(name="p5", algorithm=RandomPlayer())
-config.register_player(name="p6", algorithm=RandomPlayer())
+config.register_player(name="p5", algorithm=AggressivePlayer())
+# config.register_player(name="p5", algorithm=RandomPlayer())
+# config.register_player(name="p6", algorithm=RandomPlayer())
 config.register_player(name="p7", algorithm=CallerPlayer())
 config.register_player(name="p8", algorithm=CallerPlayer())
 # config.register_player(name="p6", algorithm=sub18player())
@@ -231,5 +230,5 @@ for i_episode in range(1000000):
     my_player.real_action = 0
     if epsilon > 0:
         epsilon -= 0.05
-    torch.save(policy.state_dict(), 'state/bot3.pth')
+    torch.save(policy.state_dict(), 'pg/state/bot3.pth')
 

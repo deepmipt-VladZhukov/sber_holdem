@@ -236,6 +236,9 @@ class HonestPlayer(BasePokerPlayer):
         else:
             action = FOLD
 
+        if (action == MAX_RAISE or action == MIN_RAISE) and valid_actions[2]['amount'] == -1:
+            action = CALL
+
         self.previous_street = round_state['street']
         return action
 
