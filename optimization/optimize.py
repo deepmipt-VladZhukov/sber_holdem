@@ -7,7 +7,7 @@ from honest_players_cpp_like import HonestPlayer, HonestPlayer2
 from hyperopt import hp, fmin, tpe
 from hyperopt.mongoexp import MongoTrials
 import argparse
-import datetime
+from datetime import datetime
 from multiprocessing import cpu_count
 from subprocess import Popen
 
@@ -59,10 +59,10 @@ if __name__ == '__main__':
     if not os.path.exists('tmp'):
         os.makedirs('tmp')
 
-    print 'starting {} hyperopt workers'.format(args.n_jobs)
+    print('starting {} hyperopt workers'.format(args.n_jobs))
     with open('hyperopt_worker.log', 'a') as f:
         cmd = HYPEROPT_WORKER_CMD.format(args.db_name)
-        for _ in xrange(args.n_jobs):
+        for _ in range(args.n_jobs):
             Popen(cmd.split(), stderr=f)
 
     space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr2', 0.5, 1.), hp.uniform('thr3', 0.5, 1.)]
