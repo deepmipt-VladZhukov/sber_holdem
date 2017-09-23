@@ -209,15 +209,6 @@ class FastPlayer(BasePokerPlayer):
         if win_rate >= 0.85 and (round_state['street'] == 'river' or round_state['street'] == 'turn'):
             action = MAX_RAISE
 
-        # elif round_state['street'] == 'preflop' and win_rate >= 1.5 /current_players and valid_actions[1]['amount']/stack < 0.5:
-        #     action = CALL
-        #
-        # elif round_state['street'] == 'preflop' and win_rate >= 0.7 and valid_actions[1]['amount']/stack < 0.8:
-        #     action = CALL
-        #
-        # elif round_state['street'] == 'preflop' and (on_the_big_blind or on_the_small_blind) and win_rate >= 1 /current_players and valid_actions[1]['amount']/stack < 0.35:
-        #     action = CALL
-
         elif round_state['street'] == 'flop' and self.previous_action == MIN_RAISE and self.previous_street == 'flop':
             action = CALL
 
