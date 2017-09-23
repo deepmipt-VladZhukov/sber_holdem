@@ -51,6 +51,10 @@ class PreflopPlayer(BasePokerPlayer):
         self.previous_action = FOLD
         self.previous_street = None
         self.bank_history = []
+
+        self.seats = []
+        self.did_action = False
+        self.player_pos = 0
         self.strength_dict = pd.read_pickle('./strength_dict.pkl')
 
     def declare_action(self, valid_actions, hole_card, round_state):
@@ -133,7 +137,7 @@ class PreflopPlayer(BasePokerPlayer):
         self.global_random = np.random.randint(10)
 
         self.seats = game_info['seats']
-        self.player_pos = [idx for idx, seat in enumerate(self.seats) if seat['uuid'] == self.uuid][0]
+        self.player_pos = self.__find_pos_by_uuid(self.uuid)
 
     def receive_round_start_message(self, round_count, hole_card, seats):
         self.actions_in_game=0
@@ -287,10 +291,9 @@ class PreflopPlayer(BasePokerPlayer):
         return action
 
     def __preflop_strategy(self, valid_actions, hole_card, round_state):
-
         fold_action, call_action, raise_action = valid_actions
         strength = self.__calc_hole_straights(hole_card)
-        pos = self.__calc_relative_pos(round_state['big_blind_pos'])
+        pos = self.__calc_relative_pos(self.player_pos, round_state['big_blind_pos'])
 
         # print(hole_card, strength, pos)
 
@@ -308,17 +311,39 @@ class PreflopPlayer(BasePokerPlayer):
             else:
                 action, amount = 'fold', 0
         elif call_action['amount'] > 30 and not self.did_action:
+            raiser_pos, raiser_amount = self.__calc_first_raiser_relative_pos(round_state, round_state['big_blind_pos'])
             if call_action['amount'] < 200:
-                if strength > 0.55:
-                    action, amount = 'raise', min(raise_action['amount']['min'] + 100,
-                                                  raise_action['amount']['max'])
-                elif strength > 0.47:
+                if raiser_pos > 6:
+                    if strength > 0.55:
+                        action, amount = 'raise', min(raise_action['amount']['min'] + 100,
+                                                      raise_action['amount']['max'])
+                    elif strength > 0.47:
+                        action, amount = 'call', call_action['amount']
+                    else:
+                        action, amount = 'fold', 0
+                elif 4 < raiser_pos <= 6:
+                    if strength > 0.47:
+                        action, amount = 'raise', min(raise_action['amount']['min'] + 100,
+                                                      raise_action['amount']['max'])
+                    elif strength > 0.33:
+                        action, amount = 'call', call_action['amount']
+                    else:
+                        action, amount = 'fold', 0
+                else:
+                    if strength > 0.33:
+                        action, amount = 'raise', min(raise_action['amount']['min'] + 100,
+                                                      raise_action['amount']['max'])
+                    else:
+                        action, amount = 'fold', 0
+            else:
+                if strength > 0.8:
+                    action, amount = 'raise', raise_action['amount']['max']
+                elif strength > 0.51:
                     action, amount = 'call', call_action['amount']
                 else:
                     action, amount = 'fold', 0
-            else:
-                action, amount = 'fold', 0
-        else:
+
+        else:  # amount > 30 and did_action = True
             if strength > 0.8:
                 action, amount = 'raise', raise_action['amount']['max']
             elif strength > 0.51:
@@ -339,17 +364,30 @@ class PreflopPlayer(BasePokerPlayer):
                       + ('s' if hole_card[0][0] == hole_card[1][0] else '')
         return self.strength_dict[combination]
 
-    def __calc_relative_pos(self, big_blind_pos):
-        if self.player_pos == big_blind_pos:
+    def __calc_relative_pos(self, player_pos, big_blind_pos):
+        if player_pos == big_blind_pos:
             return 1
 
         seats = self.seats
-        if self.player_pos > big_blind_pos:
+        if player_pos > big_blind_pos:
             seats += seats
             big_blind_pos += 9
 
         counter = 0
-        for idx in range(self.player_pos, big_blind_pos + 1):
+        for idx in range(player_pos, big_blind_pos + 1):
             if self.seats[idx]['stack'] > 0:
                 counter += 1
         return counter
+
+    def __find_pos_by_uuid(self, uuid):
+        return [idx for idx, seat in enumerate(self.seats) if seat['uuid'] == uuid][0]
+
+    def __calc_first_raiser_relative_pos(self, round_state, big_blind_pos):
+        raise_actions = [action for action in round_state['action_histories']['preflop'] if action['action'] == 'RAISE']
+        if len(raise_actions) > 0:
+            action = raise_actions[0]
+            uuid = action['uuid']
+            pos = self.__find_pos_by_uuid(uuid)
+            relative_pos = self.__calc_relative_pos(pos, big_blind_pos)
+            return relative_pos, action['amount']
+        return None
