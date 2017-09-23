@@ -38,7 +38,7 @@ def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
 
 
 def objective_fn(params):
-    r = eval_player(my_bot=HonestPlayer2(1000, params[0], params[1], params[2]))
+    r = eval_player(5, my_bot=HonestPlayer2(1000, params[0], params[1], params[2]))
 
     return {
         'loss': -1*r['my_bot'],
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # create temp directory
     if not os.path.exists('tmp'):
         os.makedirs('tmp')
-
+    print('start experiment {}'.format(args.exp_name))
     print('starting {} hyperopt workers'.format(args.n_jobs))
     with open('hyperopt_worker.log', 'a') as f:
         cmd = HYPEROPT_WORKER_CMD.format(args.db_name)

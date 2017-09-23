@@ -15,6 +15,10 @@ if __name__ == '__main__':
     trials = MongoTrials('mongo://localhost:1234/{}/jobs'.format(args.mongo_db), exp_key=args.experiment_name)
 
     all_results = trials.results
-    print 'total trials', len([r for r in all_results if r['status'] == STATUS_OK])
-    print 'loss', trials.best_trial['result']['loss']
-    print trials.best_trial['result']['params']
+    total_trials = len([r for r in all_results if r['status'] == STATUS_OK])
+    print('total trials', total_trials)
+    if total_trials > 0:
+        print('mean stack', -1*trials.best_trial['result']['loss'])
+        print(trials.best_trial['result']['params'])
+    else:
+        print('no finished trials')
