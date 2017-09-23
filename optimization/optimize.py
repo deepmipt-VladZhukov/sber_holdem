@@ -4,7 +4,7 @@ from pypokerengine.api.game import setup_config, start_poker
 dir_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(dir_path, '../simple_players'))
 from honest_players_cpp_like import HonestPlayer, HonestPlayer2
-from hyperopt import hp, fmin, tpe
+from hyperopt import hp, fmin, tpe, STATUS_OK
 from hyperopt.mongoexp import MongoTrials
 import argparse
 from datetime import datetime
@@ -34,12 +34,18 @@ def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
             result_dict.setdefault(k['name'], 0)
             result_dict[k['name']] += k['stack'] / num_evals
 
-    return -1*result_dict['my_bot']
+    return result_dict
 
 
 def objective_fn(params):
     r = eval_player(my_bot=HonestPlayer2(1000, params[0], params[1], params[2]))
-    return r
+
+    return {
+        'loss': -1*r['my_bot'],
+        'status': STATUS_OK,
+        'all_results': r,
+        'params': params
+    }
 
 
 def get_args():
@@ -48,6 +54,7 @@ def get_args():
     parser.add_argument('--exp_name', type=str, default='exp_{}'.format(datetime.now().strftime("%d.%m.%Y-%H:%M")),
                         help='Experiment name.')
     parser.add_argument('--n_jobs', type=int,  default=cpu_count(), help='Number of workers. Negative for all cpus')
+    parser.add_argument('--num_evals', type=int, default=100, help='Number of  evaluations')
     args = parser.parse_args()
     return args
 
@@ -64,8 +71,9 @@ if __name__ == '__main__':
         cmd = HYPEROPT_WORKER_CMD.format(args.db_name)
         for _ in range(args.n_jobs):
             Popen(cmd, stderr=f, shell=True)
+
     print('start minimization')
     space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr2', 0.5, 1.), hp.uniform('thr3', 0.5, 1.)]
     trials = MongoTrials('mongo://localhost:1234/{}/jobs'.format(args.db_name), exp_key=args.exp_name)
-    best = fmin(objective_fn, space, algo=tpe.suggest, max_evals=100, trials=trials)
+    best = fmin(objective_fn, space, algo=tpe.suggest, max_evals=args.num_evals, trials=trials)
     print(best)
