@@ -37,7 +37,7 @@ def objective_fn(params):
 
 
 if __name__ == '__main__':
-    space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr1', 0.5, 1.), hp.uniform('thr1', 0.5, 1.)]
+    space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr2', 0.5, 1.), hp.uniform('thr3', 0.5, 1.)]
     func_to_min = partial(objective_fn)
     best = fmin(func_to_min, space, algo=tpe.suggest, max_evals=100)
     print(best)
