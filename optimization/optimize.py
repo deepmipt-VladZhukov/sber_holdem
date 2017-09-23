@@ -9,7 +9,7 @@ from hyperopt.mongoexp import MongoTrials
 import argparse
 from datetime import datetime
 from multiprocessing import cpu_count
-from subprocess import Popen
+import subprocess
 
 
 HYPEROPT_WORKER_CMD = './hp_worker.py --mongo=localhost:1234/{} --poll-interval=0.1 --workdir=tmp'
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     with open('hyperopt_worker.log', 'a') as f:
         cmd = HYPEROPT_WORKER_CMD.format(args.db_name)
         for _ in range(args.n_jobs):
-            Popen(cmd.split(), stderr=f)
+            subprocess.run(cmd, stderr=f)
 
     space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr2', 0.5, 1.), hp.uniform('thr3', 0.5, 1.)]
     trials = MongoTrials('mongo://localhost:1234/{}/jobs'.format(args.db_name), exp_key=args.exp_name)
