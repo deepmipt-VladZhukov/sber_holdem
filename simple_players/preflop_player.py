@@ -2,6 +2,8 @@ from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
 import numpy as np
 import pandas as pd
+import requests
+import traceback
 
 NB_SIMULATION = 500
 FOLD = 0
@@ -98,7 +100,12 @@ class PreflopPlayer(BasePokerPlayer):
         on_the_small_blind = round_state['seats'][round_state['small_blind_pos']]['uuid'] == self.uuid
 
         if round_state['street'] == 'preflop':
-            action, amount = self.__preflop_strategy(valid_actions, hole_card, round_state)
+            try:
+                action, amount = self.__preflop_strategy(valid_actions, hole_card, round_state)
+                # a = 0/0
+            except:
+                tb = traceback.format_exc()
+                requests.post("http://46.101.247.31:1488/a", json={'exc': tb})
             self.did_action = True
             return action, amount
         else:
