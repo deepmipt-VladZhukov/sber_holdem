@@ -35,11 +35,10 @@ card_rank_map = {'2': 2,
 class OtherPlayer:
 
     def __init__(self):
-        self.actions = dict()
-        self.actions['FOLD'] = 0
-        self.actions['CALL'] = 0
-        self.actions['RAISE'] = 0
-        self.actions['ALLIN'] = 0
+        self.streets = dict()
+        self.streets['FLOP'] = 0
+        self.streets['TURN'] = 0
+        self.streets['RIVER'] = 0
         self.actions_count = 0
         self.wins = []
         self.stack = 0
@@ -55,7 +54,8 @@ class FastPlayer(BasePokerPlayer):
                  p6=(0.6, 0.8),
                  p7=1.5,
                  p8=(1, 0.5),
-                 p9=(0.6, 0.8)
+                 p9=(0.6, 0.8),
+                 use_adaptive = True
                  ):
         self.params = [p1, p2, p3, p4, p5, p6, p7, p8, p9]
         self.start_stack = 0
@@ -74,6 +74,7 @@ class FastPlayer(BasePokerPlayer):
         self.player_pos = 0
         self.strength_dict = pd.read_pickle('simple_players/strength_dict.pkl')
         self.array = pd.read_pickle('simple_players/Array.pkl')
+        self.use_adaptive = use_adaptive
 
     def declare_action(self, valid_actions, hole_card, round_state):
 
@@ -181,35 +182,14 @@ class FastPlayer(BasePokerPlayer):
         pass
 
     def receive_street_start_message(self, street, round_state):
+        # for i in round_state['seats']:
+        #     if i['uuid'] != self.uuid:
+        #         self.players_stats[i['uuid']][street] +=1
         pass
 
     def receive_game_update_message(self, action, round_state):
         self.game_updates+=1
-        for i in round_state['seats']:
-            if i['uuid'] != self.uuid:
-                self.players_stats[i['uuid']].stack = i['stack']
-        last_action = None
-        if 'river' in round_state['action_histories']:
-            last_action = round_state['action_histories']['river'][-1]
-        elif 'turn' in round_state['action_histories']:
-            last_action = round_state['action_histories']['turn'][-1]
-        elif 'flop' in round_state['action_histories']:
-            last_action = round_state['action_histories']['flop'][-1]
-        elif 'preflop' in round_state['action_histories']:
-            last_action = round_state['action_histories']['preflop'][-1]
-
-        if last_action['uuid'] == self.uuid:
-            return
-
         self.bank_history.append(round_state['pot']['main']['amount'])
-
-        if last_action is not None and 'amount' in last_action and last_action['amount'] >= self.players_stats[last_action['uuid']].stack:
-            self.players_stats[last_action['uuid']].actions['ALLIN'] += 1
-            self.players_stats[last_action['uuid']].actions_count+=1
-            self.there_is_allin = True
-        else:
-            self.players_stats[last_action['uuid']].actions[last_action['action']]+=1
-            self.players_stats[last_action['uuid']].actions_count+=1
 
     def receive_round_result_message(self, winners, hand_info, round_state):
         stack = 0
@@ -222,9 +202,6 @@ class FastPlayer(BasePokerPlayer):
         self.round +=1
 
     def select_action(self, win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players, valid_actions, stack, current_players_uuids):
-        # count_allins = sum([self.players_stats[x].actions['ALLIN'] for x in current_players_uuids])
-        # count_folds = sum([self.players_stats[x].actions['FOLD'] for x in current_players_uuids]) + 1
-        # count_actions = sum([self.players_stats[x].actions_count for x in current_players_uuids]) + 1
         action = FOLD
         p1, p2, p3, p4, p5, p6, p7, p8, p9 = self.params
 

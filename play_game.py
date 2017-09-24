@@ -16,13 +16,14 @@ best_params2 = [[1.9481293243008289, 0.4362033658202198], [1.2491870231565032, 0
 
 config = setup_config(max_round=50, initial_stack=1500, small_blind_amount=15)
 
-config.register_player(name="p0", algorithm=FastPlayer(*best_params2))
+config.register_player(name="p0", algorithm=AggressivePlayer())
 config.register_player(name="p1", algorithm=FastPlayer(*best_params))
 config.register_player(name="p2", algorithm=FastPlayer())
 config.register_player(name="p3", algorithm=OddPlayer())
-config.register_player(name="p4", algorithm=AggressivePlayer())
-config.register_player(name="p6", algorithm=cpp_honest2())
-config.register_player(name="p7", algorithm=cpp_honest())
+config.register_player(name="p4", algorithm=FastPlayer(*best_params2))
+config.register_player(name="p5", algorithm=cpp_honest2())
+config.register_player(name="p6", algorithm=cpp_honest())
+config.register_player(name="p7", algorithm=CallerPlayer())
 config.register_player(name="p8", algorithm=CallerPlayer())
 # config.register_player(name="p7", algorithm=RandomPlayer())
 
