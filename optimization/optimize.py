@@ -2,8 +2,14 @@ import os
 import sys
 from pypokerengine.api.game import setup_config, start_poker
 dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(dir_path, '../simple_players'))
-from honest_players_cpp_like import HonestPlayer, HonestPlayer2
+sys.path.append(os.path.join(dir_path, '..'))
+from simple_players.honest_players_cpp_like import HonestPlayer, HonestPlayer2
+from simple_players.random_player import RandomPlayer
+from simple_players.aggressive_player import AggressivePlayer
+from simple_players.caller_player import CallerPlayer
+from simple_players.fast_player import FastPlayer
+from simple_players.odd_player import OddPlayer
+
 from hyperopt import hp, fmin, tpe, STATUS_OK
 from hyperopt.mongoexp import MongoTrials
 import argparse
@@ -15,10 +21,9 @@ from subprocess import Popen
 HYPEROPT_WORKER_CMD = './hp_worker.py --mongo=localhost:1234/{} --poll-interval=0.1 --workdir=tmp'
 
 
-def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
+def eval_player(num_evals=5, other_bots=[HonestPlayer(1000) for _ in range(8)],
                 my_bot=HonestPlayer2(1000)):
-    config = setup_config(max_round=10, initial_stack=1500, small_blind_amount=15)
-
+    config = setup_config(max_round=50, initial_stack=1500, small_blind_amount=15)
     # add my player
     config.register_player(name="my_bot", algorithm=my_bot)
     # add other players
@@ -38,7 +43,11 @@ def eval_player(num_evals=10, other_bots=[HonestPlayer(1000) for _ in range(8)],
 
 
 def objective_fn(params):
-    r = eval_player(5, my_bot=HonestPlayer2(1000, params[0], params[1], params[2]))
+    other_bots = [OddPlayer(), HonestPlayer(100), HonestPlayer2(100),
+                  AggressivePlayer(), CallerPlayer(), RandomPlayer()]
+
+    my_bot = FastPlayer(*params)
+    r = eval_player(5, my_bot=my_bot, other_bots=other_bots)
 
     return {
         'loss': -1*r['my_bot'],
@@ -59,6 +68,18 @@ def get_args():
     return args
 
 
+SPACE = [[hp.uniform('p1_1', 1., 2.), hp.uniform('p1_2', 0.3, 1.5)],
+         [hp.uniform('p2_1', 0.3, 1.5), hp.uniform('p2_2', 0.5, 1.5)],
+         [hp.uniform('p3_1', 0.5, 2.), hp.uniform('p3_2', 0.2, 1.)],
+         hp.uniform('p4_1', 0.8, 3.), hp.uniform('p4_2', 0.3, 1.5),
+         [hp.uniform('p5_1', 0.5, 2.), hp.uniform('p5_2', 0.2, 1.)],
+         [hp.uniform('p6_1', 0.3, 1.5), hp.uniform('p6_2', 0.3, 1.5)],
+         hp.uniform('p7', 0.5, 2),
+         [hp.uniform('p8_1', 0.5, 2.), hp.uniform('p8_2', 0.2, 1.)],
+         [hp.uniform('p9_1', 0.3, 1.), hp.uniform('p9_2', 0.3, 1.5)],
+]
+
+
 if __name__ == '__main__':
     args = get_args()
 
@@ -73,7 +94,6 @@ if __name__ == '__main__':
             Popen(cmd, stderr=f, shell=True)
 
     print('start minimization')
-    space = [hp.uniform('thr1', 0.5, 1.), hp.uniform('thr2', 0.5, 1.), hp.uniform('thr3', 0.5, 1.)]
     trials = MongoTrials('mongo://localhost:1234/{}/jobs'.format(args.db_name), exp_key=args.exp_name)
-    best = fmin(objective_fn, space, algo=tpe.suggest, max_evals=args.num_evals, trials=trials)
+    best = fmin(objective_fn, SPACE, algo=tpe.suggest, max_evals=args.num_evals, trials=trials)
     print(best)
