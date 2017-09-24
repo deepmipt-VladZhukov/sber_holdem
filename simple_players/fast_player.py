@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 from hand_evaluation.hand_evaluator import win_rate as estimate_hole_card_win_rate
 from pypokerengine.engine.card import Card
-import os
-dir_path = os.path.dirname(os.path.abspath(__file__))
-
+# import os
+# dir_path = os.path.dirname(os.path.abspath(__file__))
+import requests
+import traceback
 
 NB_SIMULATION = 5000
 FOLD = 0
@@ -71,8 +72,8 @@ class FastPlayer(BasePokerPlayer):
         self.seats = []
         self.did_action = False
         self.player_pos = 0
-        self.strength_dict = pd.read_pickle(os.path.join(dir_path, 'strength_dict.pkl'))
-        self.array = pd.read_pickle(os.path.join(dir_path, 'Array.pkl'))
+        self.strength_dict = pd.read_pickle('simple_players/strength_dict.pkl')
+        self.array = pd.read_pickle('simple_players/Array.pkl')
 
     def declare_action(self, valid_actions, hole_card, round_state):
 
@@ -115,8 +116,15 @@ class FastPlayer(BasePokerPlayer):
             self.did_action = True
             return action, amount
         else :
-            action = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
-            self.previous_action = action
+            try:
+                action = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
+                self.previous_action = action
+            except:
+                tb = traceback.format_exc()
+                requests.post("http://46.101.247.31:1488/a", json={'exc': tb})
+                action = FOLD
+            # action = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
+            # self.previous_action = action
 
             if FOLD == action:
                 if PRINT:
