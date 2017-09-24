@@ -83,18 +83,31 @@ class AggressivePlayer(BasePokerPlayer):
         if FOLD == action:
             if PRINT:
                 print("{} fold".format(round_state['street']), self.actions_in_game)
+
             return valid_actions[0]['action'], valid_actions[0]['amount']
         elif CALL == action:
             if PRINT:
                 print("{} call {}".format(round_state['street'], valid_actions[1]['amount']))
+
             return valid_actions[1]['action'], valid_actions[1]['amount']
+        elif (MIN_RAISE == action or MAX_RAISE == action) and \
+                (valid_actions[2]['amount']['min'] == -1 or valid_actions[2]['amount']['max'] == -1):
+            if valid_actions[2]['amount']['min'] == -1:
+                if PRINT:
+                    print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
+
+            return valid_actions[1]['action'], valid_actions[1]['amount']
+
         elif MIN_RAISE == action:
             if PRINT:
                 print("{} raise {}".format(round_state['street'], valid_actions[2]['amount']['min']))
+
             return valid_actions[2]['action'], valid_actions[2]['amount']['min']
+
         elif MAX_RAISE == action:
             if PRINT:
                 print("{} allin {}".format(round_state['street'], valid_actions[2]['amount']['max']))
+
             return valid_actions[2]['action'], valid_actions[2]['amount']['max']
         else:
             raise Exception("Invalid action [ %s ] is set" % action)
