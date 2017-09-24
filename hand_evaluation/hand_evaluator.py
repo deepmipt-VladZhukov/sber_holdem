@@ -1,8 +1,8 @@
 try:
-    from card import DECK, DECK_INV, cards2ints
+    from card import DECK, DECK_INV, cards2ints, SUIT_MAP
     from combinations import combinationF7
 except:
-    from hand_evaluation.card import DECK, DECK_INV, cards2ints
+    from hand_evaluation.card import DECK, DECK_INV, cards2ints, SUIT_MAP
     from hand_evaluation.combinations import combinationF7
 from random import randint
 from itertools import chain
