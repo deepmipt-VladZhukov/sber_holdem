@@ -338,14 +338,13 @@ class FastPlayer(BasePokerPlayer):
         if player_pos == big_blind_pos:
             return 1
 
-        seats = self.seats
+        # seats = self.seats.copy()
         if player_pos > big_blind_pos:
-            seats += seats
-            big_blind_pos += 9
+            big_blind_pos += len(self.seats)
 
         counter = 0
         for idx in range(player_pos, big_blind_pos + 1):
-            if self.seats[idx]['stack'] > 0:
+            if self.seats[idx%len(self.seats)]['stack'] > 0:
                 counter += 1
         return counter
 
