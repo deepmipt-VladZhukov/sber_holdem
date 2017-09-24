@@ -63,7 +63,7 @@ def get_args():
     parser.add_argument('--exp_name', type=str, default='exp_{}'.format(datetime.now().strftime("%d.%m.%Y-%H:%M")),
                         help='Experiment name.')
     parser.add_argument('--n_jobs', type=int,  default=cpu_count(), help='Number of workers. Negative for all cpus')
-    parser.add_argument('--num_evals', type=int, default=100, help='Number of  evaluations')
+    parser.add_argument('--num_evals', type=int, default=10000000, help='Number of  evaluations')
     args = parser.parse_args()
     return args
 
