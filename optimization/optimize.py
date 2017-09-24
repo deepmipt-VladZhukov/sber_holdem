@@ -43,7 +43,7 @@ def eval_player(num_evals=5, other_bots=[HonestPlayer(1000) for _ in range(8)],
 
 
 def objective_fn(params):
-    other_bots = [OddPlayer(), HonestPlayer(100), HonestPlayer2(100),
+    other_bots = [OddPlayer(), HonestPlayer(100), HonestPlayer2(100), RandomPlayer(),
                   FastPlayer(), AggressivePlayer(), CallerPlayer(), RandomPlayer()]
 
     my_bot = FastPlayer(*params)
