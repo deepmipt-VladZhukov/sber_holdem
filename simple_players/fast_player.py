@@ -232,7 +232,7 @@ class FastPlayer(BasePokerPlayer):
         elif round_state['street'] == 'flop' and win_rate >= p2[0] and valid_actions[1]['amount']/stack < p2[1]:
             action = CALL
         #case 3
-        elif round_state['street'] == 'flop' and win_rate >= p3[0] /current_players and valid_actions[1]['amount']/stack < p3[2]:
+        elif round_state['street'] == 'flop' and win_rate >= p3[0] /current_players and valid_actions[1]['amount']/stack < p3[1]:
             action = CALL
 
         elif round_state['street'] == 'turn' and self.previous_action == MIN_RAISE and self.previous_street == 'turn':
