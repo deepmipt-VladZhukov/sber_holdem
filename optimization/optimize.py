@@ -68,16 +68,14 @@ def get_args():
     return args
 
 
-SPACE = [[hp.uniform('p1_1', 1., 2.), hp.uniform('p1_2', 0.3, 1.5)],
-         [hp.uniform('p2_1', 0.3, 1.5), hp.uniform('p2_2', 0.5, 1.5)],
-         [hp.uniform('p3_1', 0.5, 2.), hp.uniform('p3_2', 0.2, 1.)],
-         [hp.uniform('p4_1', 0.8, 3.), hp.uniform('p4_2', 0.3, 1.5)],
-         [hp.uniform('p5_1', 0.5, 2.), hp.uniform('p5_2', 0.2, 1.)],
-         [hp.uniform('p6_1', 0.3, 1.5), hp.uniform('p6_2', 0.3, 1.5)],
-         hp.uniform('p7', 0.5, 2),
-         [hp.uniform('p8_1', 0.5, 2.), hp.uniform('p8_2', 0.2, 1.)],
-         [hp.uniform('p9_1', 0.3, 1.), hp.uniform('p9_2', 0.3, 1.5)],
-]
+SPACE = [hp.uniform('p1', .3, 1.),
+         hp.uniform('p2', 0.5, 2.),
+         [hp.uniform('p3_1', 0.5, 2), hp.uniform('p3_2', 0.3, 1.5)],
+         hp.uniform('p4', .5, 3.),
+         hp.uniform('p5', .5, 2.),
+         hp.uniform('p6', .5, 2.),
+         hp.uniform('p7', .5, 2.),
+         hp.uniform('p7', .5, 2.)]
 
 
 if __name__ == '__main__':

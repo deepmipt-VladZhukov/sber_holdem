@@ -25,7 +25,9 @@ class OtherPlayer:
 
 class AggressivePlayer(BasePokerPlayer):
 
-    def __init__(self):
+    def __init__(self, p1=0.6, p2=1, p3=(1, 0.7),
+                 p4=1.5, p5=1, p6=1, p7=1.1, p8=1):
+        self.params = p1, p2, p3, p4, p5, p6, p7, p8
         self.start_stack = 0
         self.actions_in_game = 0
         self.global_stack = 0
@@ -181,34 +183,44 @@ class AggressivePlayer(BasePokerPlayer):
 
         action = FOLD
 
-        if win_rate >= 0.6:
+        p1, p2, p3, p4, p5, p6, p7, p8 = self.params
+
+        # case 1
+        if win_rate >= p1:
             action = MAX_RAISE
 
-        elif win_rate >= 1 /current_players and valid_actions[1]['amount'] == 0:
+        # case 2
+        elif win_rate >= p2 /current_players and valid_actions[1]['amount'] == 0:
             action = MIN_RAISE
 
-        elif round_state['street'] == 'preflop' and win_rate >= 1 /current_players and valid_actions[1]['amount']/stack < 0.7:
+        # case 3
+        elif round_state['street'] == 'preflop' and win_rate >= p3[0] /current_players and valid_actions[1]['amount']/stack < p3[0]:
             action = CALL
 
-        elif round_state['street'] == 'preflop' and win_rate >= 1.5 /current_players:
+        # case 4
+        elif round_state['street'] == 'preflop' and win_rate >= p4 /current_players:
             action = CALL
 
-        elif round_state['street'] == 'flop' and win_rate >= 1 /current_players:
+        # case 5
+        elif round_state['street'] == 'flop' and win_rate >= p5 /current_players:
             action = MIN_RAISE
 
         elif round_state['street'] == 'flop' and self.previous_action == MIN_RAISE and self.previous_street == 'flop':
             action = CALL
 
-        elif round_state['street'] == 'turn' and win_rate >= 1 /current_players:
+        # case 6
+        elif round_state['street'] == 'turn' and win_rate >= p6 /current_players:
             action = MIN_RAISE
 
         elif round_state['street'] == 'turn' and self.previous_action == MIN_RAISE and self.previous_street == 'turn':
             action = CALL
 
-        elif round_state['street'] == 'river' and win_rate >= 1.1 /current_players:
+        # case 7
+        elif round_state['street'] == 'river' and win_rate >= p7 /current_players:
             action = MAX_RAISE
 
-        elif round_state['street'] == 'river' and win_rate >= 1 /current_players:
+        # case 8
+        elif round_state['street'] == 'river' and win_rate >= p8 /current_players:
             action = MIN_RAISE
 
         elif round_state['street'] == 'river' and self.previous_action == MIN_RAISE and self.previous_street == 'river':
