@@ -94,7 +94,7 @@ def win_rate(num_sim, arr, my_cards, comm_cards):
 
     return point_win / num_sim
 
-def win_rate2(num_sim, arr, my_cards, comm_cards, top_range=169):
+def win_rate2(num_sim, arr, my_cards, comm_cards, top_range=169, number_of_opp_players=8):
     dec = Deck()
 
     # take cards form deck
@@ -114,7 +114,7 @@ def win_rate2(num_sim, arr, my_cards, comm_cards, top_range=169):
         )
         all_opp_cards = []
         all_opp_val = []
-        for i in range(8):
+        for i in range(number_of_opp_players):
             opp_cards = dec.sample_two_cards(top_range=top_range)
             for c in opp_cards:
                 # dec.add_card(c)
