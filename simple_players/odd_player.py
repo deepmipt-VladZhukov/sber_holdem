@@ -1,8 +1,8 @@
 from pypokerengine.players import BasePokerPlayer
-from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
+from pypokerengine.utils.card_utils import gen_cards#, estimate_hole_card_win_rate
 import numpy as np
 import pandas as pd
-# from hand_evaluation.hand_evaluator import win_rate as estimate_hole_card_win_rate
+from hand_evaluation.hand_evaluator import win_rate2 as estimate_hole_card_win_rate
 from pypokerengine.engine.card import Card
 import os
 dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -83,19 +83,39 @@ class OddPlayer(BasePokerPlayer):
 
         community_card = round_state['community_card']
 
-        if  round_state['street'] != 'preflop':
-            # win_rate = estimate_hole_card_win_rate(
-            #     NB_SIMULATION,
-            #     self.array,
-            #     hole_card,
-            #     community_card
-            # )
+        if  round_state['street'] == 'flop':
             win_rate = estimate_hole_card_win_rate(
-                nb_simulation=NB_SIMULATION,
-                nb_player=current_players,
-                hole_card=gen_cards(hole_card),
-                community_card=gen_cards(community_card)
+                NB_SIMULATION,
+                self.array,
+                hole_card,
+                community_card,
+                int(169*0.45),
+                current_players
             )
+        elif round_state['street'] == 'turn':
+            win_rate = estimate_hole_card_win_rate(
+                NB_SIMULATION,
+                self.array,
+                hole_card,
+                community_card,
+                int(169*0.25),
+                current_players
+            )
+        elif round_state['street'] == 'river':
+            win_rate = estimate_hole_card_win_rate(
+                NB_SIMULATION,
+                self.array,
+                hole_card,
+                community_card,
+                int(169*0.15),
+                current_players
+            )
+            # win_rate = estimate_hole_card_win_rate(
+            #     nb_simulation=NB_SIMULATION,
+            #     nb_player=current_players,
+            #     hole_card=gen_cards(hole_card),
+            #     community_card=gen_cards(community_card)
+            # )
 
         bank = round_state['pot']['main']['amount']
         # big_blind_amount = 2 * round_state['small_blind_amount']
@@ -109,6 +129,8 @@ class OddPlayer(BasePokerPlayer):
         if round_state['street'] == 'preflop':
             action, amount = self.__preflop_strategy(valid_actions, hole_card, round_state)
             self.did_action = True
+            if PRINT:
+                print("preflop {} amount {} stack {} bank {} call {}".format(action, amount, stack, bank, valid_actions[1]['amount']))
             return action, amount
         else :
             action, amount, f = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
@@ -134,7 +156,7 @@ class OddPlayer(BasePokerPlayer):
 
             elif MIN_RAISE == action:
                 if PRINT:
-                    print("{} raise {} f {} win_rate {} stack {} bank {}".format(round_state['street'], amount, f, win_rate, stack, bank, ))
+                    print("{} raise {} f {} win_rate {} stack {} bank {} call {}".format(round_state['street'], amount, f, win_rate, stack, bank, valid_actions[1]['amount']))
 
                 return valid_actions[2]['action'], amount
 
@@ -166,10 +188,15 @@ class OddPlayer(BasePokerPlayer):
         self.there_is_allin = False
         self.bank_history = []
         self.did_action = False
-        pass
+        if PRINT == True and self.global_stack > 0:
+            print("_"*50)
+            print(hole_card)
+
 
     def receive_street_start_message(self, street, round_state):
-        pass
+        if PRINT == True and len(round_state['community_card']) > 0 and self.global_stack > 0:
+            print(round_state['community_card'])
+
 
     def receive_game_update_message(self, action, round_state):
         self.game_updates+=1
@@ -224,11 +251,18 @@ class OddPlayer(BasePokerPlayer):
                 or (stack/self.start_stack < 0.3 and win_rate > 0.65):
             action = MAX_RAISE
             amount = valid_actions[2]['amount']['max']
-        elif win_rate < 0.15 or bet < valid_actions[1]['amount']*0.8:
-            action = FOLD
-        elif bet >= 0.8*valid_actions[1]['amount'] and bet < 1.2*valid_actions[2]['amount']['min']:
+
+        elif win_rate < 0.25 and valid_actions[1]['amount'] == 0:
             action = CALL
+            amount = 0
+
+        elif bet < valid_actions[1]['amount']*0.8 or win_rate < 0.25:
+            action = FOLD
+
+        elif bet >= 0.8*valid_actions[1]['amount'] and bet < 1.2*valid_actions[2]['amount']['min']:
+            action = MIN_RAISE
             amount = valid_actions[2]['amount']['min']
+
         elif bet >= 1.2*valid_actions[2]['amount']['min'] and bet < valid_actions[2]['amount']['max']:
             action = MIN_RAISE
             amount = bet
