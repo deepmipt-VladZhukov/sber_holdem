@@ -43,8 +43,8 @@ def eval_player(num_evals=5, other_bots=[HonestPlayer(1000) for _ in range(8)],
 
 
 def objective_fn(params):
-    other_bots = [OddPlayer(), HonestPlayer(100), HonestPlayer2(100),
-                  AggressivePlayer(), CallerPlayer(), RandomPlayer()]
+    other_bots = [OddPlayer(), HonestPlayer(100), HonestPlayer2(100), RandomPlayer(),
+                  FastPlayer(), AggressivePlayer(), CallerPlayer(), RandomPlayer()]
 
     my_bot = FastPlayer(*params)
     r = eval_player(5, my_bot=my_bot, other_bots=other_bots)
@@ -63,7 +63,7 @@ def get_args():
     parser.add_argument('--exp_name', type=str, default='exp_{}'.format(datetime.now().strftime("%d.%m.%Y-%H:%M")),
                         help='Experiment name.')
     parser.add_argument('--n_jobs', type=int,  default=cpu_count(), help='Number of workers. Negative for all cpus')
-    parser.add_argument('--num_evals', type=int, default=100, help='Number of  evaluations')
+    parser.add_argument('--num_evals', type=int, default=10000000, help='Number of  evaluations')
     args = parser.parse_args()
     return args
 
