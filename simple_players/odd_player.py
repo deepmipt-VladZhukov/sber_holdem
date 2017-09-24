@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 # from hand_evaluation.hand_evaluator import win_rate as estimate_hole_card_win_rate
 from pypokerengine.engine.card import Card
+import os
+dir_path = os.path.dirname(os.path.abspath(__file__))
+
 
 NB_SIMULATION = 1000
 FOLD = 0
@@ -58,9 +61,9 @@ class OddPlayer(BasePokerPlayer):
         self.seats = []
         self.did_action = False
         self.player_pos = 0
-        self.strength_dict = pd.read_pickle('simple_players/strength_dict.pkl')
-        self.array = pd.read_pickle('simple_players/Array.pkl')
-
+        self.strength_dict = pd.read_pickle(os.path.join(dir_path, 'strength_dict.pkl'))
+        self.array = pd.read_pickle(os.path.join(dir_path, 'Array.pkl'))
+    
     def declare_action(self, valid_actions, hole_card, round_state):
 
         stack = 0

@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 from hand_evaluation.hand_evaluator import win_rate as estimate_hole_card_win_rate
 from pypokerengine.engine.card import Card
+import os
+dir_path = os.path.dirname(os.path.abspath(__file__))
+
 
 NB_SIMULATION = 5000
 FOLD = 0
@@ -40,10 +43,20 @@ class OtherPlayer:
         self.wins = []
         self.stack = 0
 
-
 class FastPlayer(BasePokerPlayer):
 
-    def __init__(self):
+    def __init__(self,
+                 p1=(1.5, 0.65),
+                 p2=(0.6, 0.8),
+                 p3=(1, 0.5),
+                 p4=(1.5, 0.65),
+                 p5=(1, 0.5),
+                 p6=(0.6, 0.8),
+                 p7=1.5,
+                 p8=(1, 0.5),
+                 p9=(0.6, 0.8)
+                 ):
+        self.params = [p1, p2, p3, p4, p5, p6, p7, p8, p9]
         self.start_stack = 0
         self.actions_in_game = 0
         self.global_stack = 0
@@ -58,8 +71,8 @@ class FastPlayer(BasePokerPlayer):
         self.seats = []
         self.did_action = False
         self.player_pos = 0
-        self.strength_dict = pd.read_pickle('simple_players/strength_dict.pkl')
-        self.array = pd.read_pickle('simple_players/Array.pkl')
+        self.strength_dict = pd.read_pickle(os.path.join(dir_path, 'strength_dict.pkl'))
+        self.array = pd.read_pickle(os.path.join(dir_path, 'Array.pkl'))
 
     def declare_action(self, valid_actions, hole_card, round_state):
 
@@ -205,44 +218,45 @@ class FastPlayer(BasePokerPlayer):
         # count_folds = sum([self.players_stats[x].actions['FOLD'] for x in current_players_uuids]) + 1
         # count_actions = sum([self.players_stats[x].actions_count for x in current_players_uuids]) + 1
         action = FOLD
+        p1, p2, p3, p4, p5, p6, p7, p8, p9 = self.params
 
         if win_rate >= 0.85 and (round_state['street'] == 'river' or round_state['street'] == 'turn'):
             action = MAX_RAISE
 
         elif round_state['street'] == 'flop' and self.previous_action == MIN_RAISE and self.previous_street == 'flop':
             action = CALL
-
-        elif round_state['street'] == 'flop' and win_rate >= 1.5 /current_players and valid_actions[1]['amount']/stack < 0.65:
+        # case1
+        elif round_state['street'] == 'flop' and win_rate >= p1[0] /current_players and valid_actions[1]['amount']/stack < p1[1]:
             action = MIN_RAISE
-
-        elif round_state['street'] == 'flop' and win_rate >= 0.6 and valid_actions[1]['amount']/stack < 0.8:
+        #case 2
+        elif round_state['street'] == 'flop' and win_rate >= p2[0] and valid_actions[1]['amount']/stack < p2[1]:
             action = CALL
-
-        elif round_state['street'] == 'flop' and win_rate >= 1 /current_players and valid_actions[1]['amount']/stack < 0.5:
+        #case 3
+        elif round_state['street'] == 'flop' and win_rate >= p3[0] /current_players and valid_actions[1]['amount']/stack < p3[1]:
             action = CALL
 
         elif round_state['street'] == 'turn' and self.previous_action == MIN_RAISE and self.previous_street == 'turn':
             action = CALL
-
-        elif round_state['street'] == 'turn' and win_rate >= 1.5 /current_players and valid_actions[1]['amount']/stack < 0.65:
+        # case 4
+        elif round_state['street'] == 'turn' and win_rate >= p4[0] /current_players and valid_actions[1]['amount']/stack < p4[1]:
             action = MIN_RAISE
-
-        elif round_state['street'] == 'turn' and win_rate >= 1 /current_players and valid_actions[1]['amount']/stack < 0.5:
+        # case 5
+        elif round_state['street'] == 'turn' and win_rate >= p5[0] /current_players and valid_actions[1]['amount']/stack < p5[1]:
             action = CALL
-
-        elif round_state['street'] == 'turn' and win_rate >= 0.6 and valid_actions[1]['amount']/stack < 0.8:
+        # case 6
+        elif round_state['street'] == 'turn' and win_rate >= p6[0] and valid_actions[1]['amount']/stack < p6[1]:
             action = CALL
 
         elif round_state['street'] == 'river' and self.previous_action == MIN_RAISE and self.previous_street == 'river':
             action = CALL
-
-        elif round_state['street'] == 'river' and win_rate >= 1.5 /current_players:
+        #case 7
+        elif round_state['street'] == 'river' and win_rate >= p7 /current_players:
             action = MIN_RAISE
-
-        elif round_state['street'] == 'river' and win_rate >= 1 /current_players and valid_actions[1]['amount']/stack < 0.5:
+        #case 8
+        elif round_state['street'] == 'river' and win_rate >= p8[0] /current_players and valid_actions[1]['amount']/stack < p8[1]:
             action = CALL
-
-        elif round_state['street'] == 'river' and win_rate >= 0.6 and valid_actions[1]['amount']/stack < 0.8:
+        #case 9
+        elif round_state['street'] == 'river' and win_rate >= p9[0] and valid_actions[1]['amount']/stack < p9[1]:
             action = CALL
 
         elif valid_actions[1]['amount'] == 0:
