@@ -1,6 +1,10 @@
-from hand_evaluation.card import DECK, DECK_INV, cards2ints
+try:
+    from card import DECK, DECK_INV, cards2ints
+    from combinations import combinationF7
+except:
+    from hand_evaluation.card import DECK, DECK_INV, cards2ints
+    from hand_evaluation.combinations import combinationF7
 from random import randint
-from hand_evaluation.combinations import combinationF7
 from itertools import chain
 
 
