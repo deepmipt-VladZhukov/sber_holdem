@@ -46,7 +46,7 @@ def objective_fn(params):
     other_bots = [OddPlayer(), HonestPlayer(100), HonestPlayer2(100), RandomPlayer(),
                   FastPlayer(), AggressivePlayer(), CallerPlayer(), RandomPlayer()]
 
-    my_bot = FastPlayer(*params)
+    my_bot = AggressivePlayer(*params)
     r = eval_player(5, my_bot=my_bot, other_bots=other_bots)
 
     return {
