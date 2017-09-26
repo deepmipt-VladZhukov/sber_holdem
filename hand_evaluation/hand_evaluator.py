@@ -40,7 +40,7 @@ class Deck(object):
         while True:
             cnt += 1
             if cnt > top_range:
-                return [self.deck.sample_card() for _ in range(2)]
+                return [self.sample_card() for _ in range(2)]
             pair_id = randint(0, top_range - 1)
             pair_str = self.top_combo[pair_id][0]
             if len(pair_str)==3:

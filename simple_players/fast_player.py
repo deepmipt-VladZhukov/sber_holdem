@@ -2,14 +2,10 @@ from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards
 import numpy as np
 import pandas as pd
-from hand_evaluation.hand_evaluator import win_rate as estimate_hole_card_win_rate
+from hand_evaluation.hand_evaluator import win_rate2 as estimate_hole_card_win_rate
 from pypokerengine.engine.card import Card
-# import os
-# dir_path = os.path.dirname(os.path.abspath(__file__))
-import requests
-import traceback
 
-NB_SIMULATION = 5000
+NB_SIMULATION = 1000
 FOLD = 0
 CALL = 1
 MIN_RAISE = 2
@@ -36,9 +32,9 @@ class OtherPlayer:
 
     def __init__(self):
         self.streets = dict()
-        self.streets['FLOP'] = 0
-        self.streets['TURN'] = 0
-        self.streets['RIVER'] = 0
+        self.streets['flop'] = 0
+        self.streets['turn'] = 0
+        self.streets['river'] = 0
         self.actions_count = 0
         self.wins = []
         self.stack = 0
@@ -75,6 +71,10 @@ class FastPlayer(BasePokerPlayer):
         self.strength_dict = pd.read_pickle('simple_players/strength_dict.pkl')
         self.array = pd.read_pickle('simple_players/Array.pkl')
         self.use_adaptive = use_adaptive
+        self.street_counts = dict()
+        self.street_counts['flop'] = 0
+        self.street_counts['turn'] = 0
+        self.street_counts['river'] = 0
 
     def declare_action(self, valid_actions, hole_card, round_state):
 
@@ -82,6 +82,7 @@ class FastPlayer(BasePokerPlayer):
         current_players = 0
         current_players_uuids = []
 
+        # find active players
         for i in round_state['seats']:
             if self.uuid == i['uuid']:
                 stack = i['stack']
@@ -94,17 +95,33 @@ class FastPlayer(BasePokerPlayer):
             current_players = 2
 
         community_card = round_state['community_card']
+        if round_state['street'] != 'preflop':
+            win_rate = 0
+            for i in current_players_uuids:
 
-        if  round_state['street'] != 'preflop':
-            win_rate = estimate_hole_card_win_rate(
-                NB_SIMULATION,
-                self.array,
-                hole_card,
-                community_card
-            )
+                # calculate number of cards combinations for other players
+                comb_cards = 169
+                if self.players_stats[i].streets[round_state['street']] == 0:
+                    comb_cards = 169
+                else:
+                    comb_cards = max(int(0.2*169), int(169*((self.players_stats[i].streets[round_state['street']])/(self.street_counts[round_state['street']]))))
 
-        bank = round_state['pot']['main']['amount']
-        big_blind_amount = 2 * round_state['small_blind_amount']
+                win_rate += estimate_hole_card_win_rate(
+                    NB_SIMULATION,
+                    self.array,
+                    hole_card,
+                    community_card,
+                    comb_cards,
+                    1
+                )
+
+            if len(current_players_uuids) == 0:
+                b = 1
+            else:
+                b = len(current_players_uuids)
+
+            win_rate /= b
+
         self.actions_in_game +=1
 
         if stack == 0:
@@ -112,20 +129,15 @@ class FastPlayer(BasePokerPlayer):
 
         on_the_big_blind = round_state['seats'][round_state['big_blind_pos']]['uuid'] == self.uuid
         on_the_small_blind = round_state['seats'][round_state['small_blind_pos']]['uuid'] == self.uuid
+
         if round_state['street'] == 'preflop':
             action, amount = self.__preflop_strategy(valid_actions, hole_card, round_state)
             self.did_action = True
             return action, amount
         else :
-            try:
-                action = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
-                self.previous_action = action
-            except:
-                tb = traceback.format_exc()
-                requests.post("http://46.101.247.31:1488/a", json={'exc': tb})
-                action = FOLD
-            # action = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
-            # self.previous_action = action
+
+            action = self.select_action(win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players,valid_actions, stack, current_players_uuids)
+            self.previous_action = action
 
             if FOLD == action:
                 if PRINT:
@@ -139,6 +151,8 @@ class FastPlayer(BasePokerPlayer):
                 return valid_actions[1]['action'], valid_actions[1]['amount']
             elif (MIN_RAISE == action or MAX_RAISE == action) and \
                     (valid_actions[2]['amount']['min'] == -1 or valid_actions[2]['amount']['max'] == -1):
+
+                # there are some bugs in the implementation of pypokerengine
                 if valid_actions[2]['amount']['min'] == -1:
                     if PRINT:
                         print("{} call {}".format(round_state['street'],  valid_actions[1]['amount']))
@@ -162,6 +176,7 @@ class FastPlayer(BasePokerPlayer):
     def receive_game_start_message(self, game_info):
         self.nb_player = game_info['player_num']
         stack = 0
+        self.players_stats = dict()
         for i in game_info['seats']:
             if self.uuid == i['uuid']:
                 stack = i['stack']
@@ -182,10 +197,12 @@ class FastPlayer(BasePokerPlayer):
         pass
 
     def receive_street_start_message(self, street, round_state):
-        # for i in round_state['seats']:
-        #     if i['uuid'] != self.uuid:
-        #         self.players_stats[i['uuid']][street] +=1
-        pass
+        # collect enemies stats
+        for i in round_state['seats']:
+            if i['uuid'] != self.uuid and street != 'preflop':
+                self.players_stats[i['uuid']].streets[street] +=1
+        if street != 'preflop':
+            self.street_counts[street]+=1
 
     def receive_game_update_message(self, action, round_state):
         self.game_updates+=1
@@ -203,6 +220,8 @@ class FastPlayer(BasePokerPlayer):
 
     def select_action(self, win_rate, round_state, on_the_big_blind, on_the_small_blind, current_players, valid_actions, stack, current_players_uuids):
         action = FOLD
+
+        # parameters for strategy optimized by hyperopt
         p1, p2, p3, p4, p5, p6, p7, p8, p9 = self.params
 
         if win_rate >= 0.85 and (round_state['street'] == 'river' or round_state['street'] == 'turn'):
@@ -267,10 +286,13 @@ class FastPlayer(BasePokerPlayer):
 
 
         if call_action['amount'] == 30:
-            if (pos > 7 and strength > 0.445) \
-                    or (4 < pos <= 7 and strength > 0.33) \
-                    or (2 < pos <= 4 and strength > 0.26) \
-                    or (pos == 2 and strength > 0.26):
+            if (pos > 7 and strength > 0.445):
+                action, amount = 'raise', min(120, raise_action['amount']['max'])
+            elif (4 < pos <= 7 and strength > 0.26) :
+                action, amount = 'raise', min(90, raise_action['amount']['max'])
+            elif (2 < pos <= 4 and strength > 0.26) :
+                action, amount = 'raise', min(60, raise_action['amount']['max'])
+            elif (pos == 2 and strength > 0.26):
                 action, amount = 'raise', min(90, raise_action['amount']['max'])
             elif pos == 1:
                 if strength > 0.33:

@@ -16,19 +16,19 @@ best_params2 = [[1.9481293243008289, 0.4362033658202198], [1.2491870231565032, 0
 
 config = setup_config(max_round=50, initial_stack=1500, small_blind_amount=15)
 
-config.register_player(name="p0", algorithm=AggressivePlayer())
-config.register_player(name="p1", algorithm=FastPlayer(*best_params))
-config.register_player(name="p2", algorithm=FastPlayer())
-config.register_player(name="p3", algorithm=OddPlayer())
-config.register_player(name="p4", algorithm=FastPlayer(*best_params2))
+config.register_player(name="p0", algorithm=FastPlayer(*best_params))
+config.register_player(name="p1", algorithm=AggressivePlayer())
+config.register_player(name="p2", algorithm=HonestPlayer())
+# config.register_player(name="p3", algorithm=HonestPlayer())
+config.register_player(name="p4", algorithm=OddPlayer())
 config.register_player(name="p5", algorithm=cpp_honest2())
 config.register_player(name="p6", algorithm=cpp_honest())
-config.register_player(name="p7", algorithm=CallerPlayer())
-config.register_player(name="p8", algorithm=CallerPlayer())
+# config.register_player(name="p7", algorithm=HonestPlayer())
+# config.register_player(name="p8", algorithm=AggressivePlayer())
 # config.register_player(name="p7", algorithm=RandomPlayer())
 
 summ = 0
-num_players = 8
+num_players = 5
 summ_old = [0 for i in range(num_players)]
 games_with_0 = 0
 num_games = 100
@@ -40,7 +40,9 @@ for i in range(num_games):
         games_with_0 +=1
     for k in range(num_players):
         summ_old[k] += game_result['players'][k+1]['stack']
-    print(summ/(i+1), 'others', [summ_old[z]/(i+1) for z in range(num_players)], "games with 0 stack:", games_with_0)
+
+    # shows average chips for played games
+    print("game {}:".format(i), summ/(i+1), 'others', [summ_old[z]/(i+1) for z in range(num_players)], "games with 0 stack:", games_with_0)
     # print(game_result['players'][0]['stack'], 'others', [summ_old[z] for z in range(num_players)], "games with 0 stack:", games_with_0)
 
 print(summ/num_games)
